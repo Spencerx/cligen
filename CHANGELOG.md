@@ -22,6 +22,7 @@ Expected: September 2026
 
 ### Features
 
+* Added LLVM libFuzzer support
 * Made CLIgen spec parser reentrant
 
 ### Corrected Bugs

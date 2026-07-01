@@ -170,6 +170,7 @@ AH_BOTTOM([#include <cligen_custom.h>])
 
 AC_CONFIG_FILES([
         Makefile
+        fuzz/Makefile
         test/config.sh
 ])
 AC_OUTPUT

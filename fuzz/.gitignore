@@ -1,0 +1,14 @@
+# Compiled harnesses
+fuzz_spec
+fuzz_match
+fuzz_cv
+# Build cache
+obj/
+# Runtime outputs — grow during fuzzing, store findings as issues instead
+corpus_*/
+artifacts_*/
+crash-*
+leak-*
+timeout-*
+*.log
+fuzz-*.log
