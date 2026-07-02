@@ -576,7 +576,8 @@ match_bindvars(cligen_handle h,
         if ((cv = add_cov_to_cvec(h, co, token, cvv)) == NULL)
             goto done;
     }
-    else if (co->co_type == CO_COMMAND && co_orig->co_type == CO_VARIABLE){
+    else if (co->co_type == CO_COMMAND &&
+             co_orig != NULL && co_orig->co_type == CO_VARIABLE){
         /* Once so translate only is done once */
         if ((cv = add_cov_to_cvec(h, co_orig,
                                   co->co_value?co->co_value:co->co_command,

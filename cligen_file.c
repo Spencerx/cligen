@@ -61,6 +61,14 @@
  *   Shell command:           foo.sh 22 1.2.3.4
  *   CLI input:               > 2.3.4.5
  *   Shell command:           foo.sh 99 1.2.3.4.
+ *
+ * @note SECURITY: WARNING - example/test code only, do not use in production.
+ *   User-supplied CLI values are placed in environment variables and expanded by
+ *   the shell via system(3). POSIX shells do not execute shell metacharacters that
+ *   originate from variable expansion (so ';', '|', '$(...)' in a value are not run
+ *   as commands), but expanded values are still subject to word-splitting and
+ *   pathname (glob) expansion. Only use with trusted input. For untrusted input use
+ *   a non-shell exec (fork + execv) as in pipe_shell_fn().
  */
 int
 cligen_exec_cb(cligen_handle handle,
@@ -475,7 +483,7 @@ main(int   argc,
         cligen_comment_set(h, *str);
     if ((str = cvec_find_str(globals, "mode")) != NULL)
         cligen_ph_active_set_byname(h, str);
-    cvec_free(globals);
+
     ph = NULL;
     while ((ph = cligen_ph_each(h, ph)) != NULL){
         if ((pt = cligen_ph_parsetree_get(ph)) != NULL){     /* map functions */
@@ -498,6 +506,8 @@ main(int   argc,
  ok:
     retval = 0;
  done:
+    if (globals)
+        cvec_free(globals);
     fclose(f);
     if (skip_names)
         cvec_free(skip_names);

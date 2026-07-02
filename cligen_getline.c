@@ -318,9 +318,18 @@ gl_unregfd(int fd)
     for (i = 0; i < nextfds; i++) {
         if (extfds[i].fd == fd) {
             if (i+1 < nextfds)
-                memcpy(&extfds[i], &extfds[i+1], nextfds-i);
-            extfds = realloc(extfds, (nextfds-1) * sizeof(*extfds));
+                memmove(&extfds[i], &extfds[i+1], (nextfds-i-1) * sizeof(*extfds));
             nextfds--;
+            if (nextfds == 0){
+                free(extfds);
+                extfds = NULL;
+            }
+            else {
+                struct regfd *tmp;
+                /* Shrink; if realloc fails keep the larger buffer (still valid) */
+                if ((tmp = realloc(extfds, nextfds * sizeof(*extfds))) != NULL)
+                    extfds = tmp;
+            }
             return 0;
         }
     }

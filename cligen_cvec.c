@@ -72,13 +72,17 @@
 /*! A strdup version that aligns on 4 bytes. To avoid warning from valgrind */
 static inline char * strdup4(const char *str)
 {
-    char *dup;
-    int len;
+    char  *dup;
+    size_t slen;
+    size_t len;
 
-    len = align4(strlen(str)+1);
+    slen = strlen(str) + 1;        /* valid source bytes incl NUL */
+    len  = align4(slen);           /* allocation rounded up to 4 (valgrind) */
     if ((dup = malloc(len)) == NULL)
         return NULL;
-    memcpy(dup, str, len);
+    memcpy(dup, str, slen);        /* copy only valid bytes, no source over-read */
+    if (len > slen)
+        memset(dup + slen, 0, len - slen); /* zero padding to stay valgrind-clean */
     return dup;
 }
 

@@ -537,6 +537,8 @@ cligen_parsetree_sort(parse_tree *pt,
     int         i;
     parse_tree *pt1;
 
+    if (pt->pt_vec == NULL)
+        return;
     qsort(pt->pt_vec, pt_len_get(pt), sizeof(cg_obj*), co_cmp);
     for (i=0; i<pt_len_get(pt); i++){
         if ((co = pt_vec_i_get(pt, i)) == NULL)

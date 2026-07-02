@@ -3148,6 +3148,8 @@ cv_parse(const char *str,
     }
     if (retval == 0){
         fprintf(stderr, "cv parse error: %s\n", reason);
+        if (reason)
+            free(reason);
         return -1;
     }
     return 0;

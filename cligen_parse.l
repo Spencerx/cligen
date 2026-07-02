@@ -209,13 +209,13 @@ stripdup(char *s0)
 <STRING>\"                { BEGIN(_CY->cy_lex_string_state); return DQ; }
 <STRING>\\\"              { yylval->string = strdup(yytext);
                             return CHARS;}
-<STRING>\\              { yylval->string = strdup(yytext);
+<STRING>\\                { yylval->string = strdup(yytext);
                             return CHARS;}
 <STRING>[^\\"\n]+         { yylval->string = strdup(yytext);
                             return CHARS;}
 
 <ESCAPE>.                 { BEGIN(_CY->cy_lex_state);
-                             yylval->string = strdup(yytext);
+                             yylval->string = yytext;
                              return HELPSTR; }
 
 <COMMENT>\n               { _CY->cy_linenum++; BEGIN(_CY->cy_lex_state);}

@@ -341,7 +341,7 @@ cbuf_append_str(cbuf       *cb,
     len0 = strlen(str);
     len = cb->cb_strlen + len0;
     /* Ensure buffer is large enough */
-    if (cbuf_realloc(cb, len) < 0)
+    if (cbuf_realloc(cb, len0) < 0)   /* pass extra length; cbuf_realloc adds cb_strlen */
         return -1;
     strncpy(cb->cb_buffer+cb->cb_strlen, str, len0+1);
     cb->cb_strlen = len;

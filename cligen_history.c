@@ -254,7 +254,10 @@ int
 hist_copy(cligen_handle h,
           char         *ptr)
 {
+    if (ptr == NULL)
+        ptr = "";
     strncpy(cligen_buf(h), ptr, cligen_buf_size(h));
+    cligen_buf(h)[cligen_buf_size(h) - 1] = '\0';
     return 0;
 }
 
@@ -266,7 +269,10 @@ hist_copy_prev(cligen_handle h)
 {
     char *ptr = hist_prev(h);
 
+    if (ptr == NULL)
+        ptr = "";
     strncpy(cligen_buf(h), ptr, cligen_buf_size(h));
+    cligen_buf(h)[cligen_buf_size(h) - 1] = '\0';
     return 0;
 }
 
@@ -280,7 +286,11 @@ hist_copy_pos(cligen_handle h)
     int pos;
 
     pos = hist_pos(h);
-    strncpy(cligen_buf(h), ch->ch_hist_buf[pos], cligen_buf_size(h));
+    if (ch->ch_hist_buf[pos] != NULL)
+        strncpy(cligen_buf(h), ch->ch_hist_buf[pos], cligen_buf_size(h));
+    else
+        cligen_buf(h)[0] = '\0';
+    cligen_buf(h)[cligen_buf_size(h) - 1] = '\0';
     return 0;
 }
 
@@ -292,7 +302,10 @@ hist_copy_next(cligen_handle h)
 {
     char *ptr = hist_next(h);
 
+    if (ptr == NULL)
+        ptr = "";
     strncpy(cligen_buf(h), ptr, cligen_buf_size(h));
+    cligen_buf(h)[cligen_buf_size(h) - 1] = '\0';
     return 0;
 }
 

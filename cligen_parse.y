@@ -67,6 +67,22 @@
 %type <string> helpstring1
 %type <intval> preline
 
+%destructor { free($$); } NAME
+%destructor { free($$); } CHARS
+%destructor { free($$); } charseq
+%destructor { free($$); } helpstring1
+%destructor { free($$); } HELPSTR
+%destructor { free($$); } NUMBER
+%destructor { free($$); } DECIMAL
+%destructor { free($$); } numdec
+%destructor { free($$); } typecast
+%destructor {
+    if ($$) {
+        cgy_choice_pair_t *_p = (cgy_choice_pair_t *)$$;
+        free(_p->names); free(_p->helps); free(_p);
+    }
+} choices choice
+
 %lex-param     {yyscan_t yyscanner}    /* passed to yylex() */
 %parse-param   {void *_cy}             /* passed to yyparse() and yyerror() */
 %parse-param   {yyscan_t yyscanner}    /* passed to yyparse(), yylex(), and yyerror() */
@@ -240,7 +256,7 @@ cgy_flag(cligen_yacc *cy,
  * I decided to create special syntax for this so that assignments can use any
  * variable names.
  * @param[in]  cy   CLIgen yacc parse struct
- * @param[in]  name Name of tree
+ * @param[in]  name Name of tree, can be NULL
  */
 static int
 cgy_treename(cligen_yacc *cy,
@@ -287,9 +303,11 @@ cgy_treename(cligen_yacc *cy,
         }
     }
     /* 4. Set the new name */
-    if (cy->cy_treename)
+    if (cy->cy_treename){
         free(cy->cy_treename);
-    if ((cy->cy_treename = strdup(name)) == NULL){
+        cy->cy_treename = NULL;
+    }
+    if (name && (cy->cy_treename = strdup(name)) == NULL){ // XXX
         fprintf(stderr, "%s: strdup: %s\n", __FUNCTION__, strerror(errno));
         goto done;
     }
@@ -302,6 +320,8 @@ cgy_treename(cligen_yacc *cy,
  *
  * Only string type supported for now
  * @param[in]  cy  CLIgen yacc parse struct
+ * @param[in]  var Variable name
+ * @param[in]  val Variable value
  */
 static int
 cgy_assignment(cligen_yacc *cy,
@@ -380,7 +400,11 @@ cgy_callback(cligen_yacc *cy,
         return -1;
     }
     memset(cc, 0, sizeof(*cc));
-    cc->cc_fn_str = cb_str;
+    if ((cc->cc_fn_str = strdup(cb_str)) == NULL){
+        fprintf(stderr, "%s: strdup: %s\n", __FUNCTION__, strerror(errno));
+        free(cc);
+        return -1;
+    }
     if (IS_PIPE_TREE(cy->cy_treename)){ /* Only for cligen, clixon has other mechanisms */
         cc->cc_flags |= CC_FLAGS_PIPE_FUNCTION;
     }
@@ -450,6 +474,8 @@ static int
 expand_fn(cligen_yacc *cy,
           char        *fn)
 {
+    if (cy->cy_var->co_expand_fn_str)
+        free(cy->cy_var->co_expand_fn_str);
     cy->cy_var->co_expand_fn_str = fn;
     return 0;
 }
@@ -458,6 +484,8 @@ static int
 cg_translate(cligen_yacc *cy,
              char        *fn)
 {
+    if (cy->cy_var->co_translate_fn_str)
+        free(cy->cy_var->co_translate_fn_str);
     cy->cy_var->co_translate_fn_str = fn;
     return 0;
 }
@@ -553,7 +581,8 @@ cgy_var_name_type(cligen_yacc *cy,
                   char        *name,
                   char        *type)
 {
-    cy->cy_var->co_command = name;
+    if ((cy->cy_var->co_command = strdup(name)) == NULL)
+        return -1;
     if ((cy->cy_var->co_vtype = cv_str2type(type)) == CGV_ERR){
         cligen_parseerror1(cy, "Invalid type");
         fprintf(stderr, "%s: Invalid type: %s\n", __FUNCTION__, type);
@@ -1314,9 +1343,17 @@ cgy_exit(cligen_yacc *cy)
     if (debug)
         fprintf(stderr, "%s\n", __FUNCTION__);
 
-    cy->cy_var = NULL;
+    if (cy->cy_var) {
+        co_free(cy->cy_var, 1);
+        cy->cy_var = NULL;
+    }
+    if (cy->cy_cvec) {
+        cvec_free(cy->cy_cvec);
+        cy->cy_cvec = NULL;
+    }
     cgy_list_delete(&cy->cy_list);
-    if((cs = cy->cy_stack) != NULL){
+    while ((cs = cy->cy_stack) != NULL){
+        cy->cy_stack = cs->cs_next;
         delete_stack_element(cs);
 #if 0
         fprintf(stderr, "%s:%d: error: lacking () or [] at or before: '%s'\n",
@@ -1326,6 +1363,10 @@ cgy_exit(cligen_yacc *cy)
             );
         return -1;
 #endif
+    }
+    if (cy->cy_callbacks){
+        co_callbacks_free(&cy->cy_callbacks);
+        cy->cy_callbacks = NULL;
     }
     return 0;
 }
@@ -1401,7 +1442,7 @@ flag        : NAME               { _PARSE_DEBUG("flag->NAME");
 
 callback    : NAME               { _PARSE_DEBUG("callback->NAME ( arglist )");
                                    if (cgy_callback(_cy, $1) < 0) _YYERROR("callback");}
-              '(' arglist ')'
+              '(' arglist ')' { free($1); }
             ;
 
 arglist     : arglist1
@@ -1413,7 +1454,7 @@ arglist1    : arglist1 ',' arg
             ;
 
 arg         : typecast arg1 {
-                    if ($2 && cgy_callback_arg(_cy, $1, $2) < 0) _YYERROR("arg");
+                    if ($2 && cgy_callback_arg(_cy, $1, $2) < 0) { if ($1 != NULL) free($1); if ($2 != NULL) free($2); _YYERROR("arg"); }
                     if ($1 != NULL) free($1);
                     if ($2 != NULL) free($2);
               }
@@ -1483,21 +1524,21 @@ helpstring1 : helpstring1 HELPSTR
             ;
 
 cmd         : NAME           { _PARSE_DEBUG("cmd->NAME");
-                               if (cgy_cmd(_cy, $1) < 0) _YYERROR("cmd"); free($1); }
+                               if (cgy_cmd(_cy, $1) < 0) { free($1); _YYERROR("cmd"); } free($1); }
             | '@' NAME       { _PARSE_DEBUG("cmd->@NAME");
-                               if (cgy_reference(_cy, $2, 0) < 0) _YYERROR("cmd"); free($2); }
+                               if (cgy_reference(_cy, $2, 0) < 0) { free($2); _YYERROR("cmd"); } free($2); }
             | '@' '|' NAME   { _PARSE_DEBUG("cmd->@|NAME");
-                               if (cgy_reference(_cy, $3, 1) < 0) _YYERROR("cmd"); free($3); }
+                               if (cgy_reference(_cy, $3, 1) < 0) { free($3); _YYERROR("cmd"); } free($3); }
             | '<'            { if ((_CY->cy_var = cgy_var_create(_CY)) == NULL) _YYERROR("cmd"); }
-               variable '>'  { if (cgy_var_post(_cy) < 0) _YYERROR("cmd"); }
+               variable '>'  { if (cgy_var_post(_cy) < 0) _YYERROR("cmd"); _CY->cy_var = NULL; }
             ;
 
-variable    : NAME          { if (cgy_var_name_type(_cy, $1, $1)<0) _YYERROR("variable"); }
-            | NAME ':' NAME { if (cgy_var_name_type(_cy, $1, $3)<0) _YYERROR("variable"); free($3); }
+variable    : NAME          { if (cgy_var_name_type(_cy, $1, $1)<0) { free($1); _YYERROR("variable"); } free($1); }
+            | NAME ':' NAME { if (cgy_var_name_type(_cy, $1, $3)<0) { free($3); free($1); _YYERROR("variable"); } free($3); free($1); }
             | NAME  { if (cgy_var_name_type(_cy, $1, $1) < 0) _YYERROR("variable"); }
-              keypairs
-            | NAME ':' NAME  { if (cgy_var_name_type(_cy, $1, $3) < 0) _YYERROR("variable"); free($3); }
-              keypairs
+              keypairs { free($1); }
+            | NAME ':' NAME  { if (cgy_var_name_type(_cy, $1, $3) < 0) _YYERROR("variable"); }
+              keypairs { free($1); free($3); }
             ;
 
 keypairs    : keypair {
@@ -1509,7 +1550,7 @@ keypairs    : keypair {
             ;
 
 numdec      : NUMBER { $$ = $1; }
-            | DECIMAL
+            | DECIMAL { $$ = $1; }
             ;
 
 keypair     : NAME '(' ')' {
@@ -1521,31 +1562,33 @@ keypair     : NAME '(' ')' {
                  expand_fn(_cy, $1); }
             | V_SHOW ':' NAME {
                  _PARSE_DEBUG("keypair->show:name");
+                 if (_CY->cy_var->co_show) free(_CY->cy_var->co_show);
                  _CY->cy_var->co_show = $3;
               }
             | V_SHOW ':' DQ charseq DQ {
                  _PARSE_DEBUG("keypair->show:DQ charseq DQ");
+                 if (_CY->cy_var->co_show) free(_CY->cy_var->co_show);
                  _CY->cy_var->co_show = $4;
               }
             | V_RANGE '[' numdec ':' numdec ']' {
                  _PARSE_DEBUG("keypair->range [<nr>:<nr>]");
-                if (cg_range(_cy, $3, $5) < 0) _YYERROR("keypair"); free($3); free($5);
+                 if (cg_range(_cy, $3, $5) < 0){ free($3); free($5);_YYERROR("keypair");} free($3); free($5);
               }
             | V_RANGE '[' numdec ']' {
                  _PARSE_DEBUG("keypair->range [<nr>]");
-                 if (cg_range(_cy, NULL, $3) < 0) _YYERROR("keypair"); free($3);
+                 if (cg_range(_cy, NULL, $3) < 0) {free($3);_YYERROR("keypair");} free($3);
               }
             | V_LENGTH '[' NUMBER ':' NUMBER ']' {
                  _PARSE_DEBUG("keypair->length[number:number]");
-                 if (cg_length(_cy, $3, $5) < 0) _YYERROR("keypair"); free($3); free($5);
+                 if (cg_length(_cy, $3, $5) < 0) { free($3); free($5);_YYERROR("keypair");} free($3); free($5);
               }
             | V_LENGTH '[' NUMBER ']' {
                  _PARSE_DEBUG("keypair->length[number]");
-                 if (cg_length(_cy, NULL, $3) < 0) _YYERROR("keypair"); free($3);
+                 if (cg_length(_cy, NULL, $3) < 0){free($3); _YYERROR("keypair");} free($3);
               }
             | V_FRACTION_DIGITS ':' NUMBER {
                  _PARSE_DEBUG("keypair->fraction-digits:number");
-                if (cg_dec64_n(_cy, $3) < 0) _YYERROR("keypair"); free($3);
+                 if (cg_dec64_n(_cy, $3) < 0) {free($3);_YYERROR("keypair")} free($3);
               }
             | V_CHOICE choices {
                  _PARSE_DEBUG("keypair->choice choices");
@@ -1563,11 +1606,11 @@ keypair     : NAME '(' ')' {
               }
             | V_REGEXP  ':' DQ charseq DQ {
                  _PARSE_DEBUG("keypair->regexp : DQ charseq DQ");
-                 if (cg_regexp(_cy, $4, 0) < 0) _YYERROR("keypair"); free($4);
+                 if (cg_regexp(_cy, $4, 0) < 0) {free($4);_YYERROR("keypair")} free($4);
               }
             | V_REGEXP  ':' '!'  DQ charseq DQ {
                  _PARSE_DEBUG("keypair->regexp : ! DQ charseq DQ");
-                 if (cg_regexp(_cy, $5, 1) < 0) _YYERROR("keypair"); free($5);
+                 if (cg_regexp(_cy, $5, 1) < 0) {free($5);_YYERROR("keypair")} free($5);
               }
             | V_TRANSLATE ':' NAME '(' ')' {
                  _PARSE_DEBUG("keypair->translate : name ()");
@@ -1588,7 +1631,7 @@ exparg     : DQ DQ
            ;
 
 exparg     : typecast arg1 {
-                    if ($2 && cgy_callback_arg(_cy, $1, $2) < 0) _YYERROR("exparg");
+                    if ($2 && cgy_callback_arg(_cy, $1, $2) < 0) { if ($1) free($1); if ($2) free($2); _YYERROR("exparg"); }
                     if ($1) free($1);
                     if ($2) free($2);
               }
