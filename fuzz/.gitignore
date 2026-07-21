@@ -1,14 +1,19 @@
-# Compiled harnesses
-fuzz_spec
-fuzz_match
-fuzz_cv
+# Compiled harnesses (in libfuzzer/)
+libfuzzer/fuzz_spec
+libfuzzer/fuzz_cv
+libfuzzer/fuzz_input
 # Build cache
-obj/
+libfuzzer/obj/
 # Runtime outputs — grow during fuzzing, store findings as issues instead
-corpus_*/
-artifacts_*/
-crash-*
-leak-*
-timeout-*
-*.log
-fuzz-*.log
+libfuzzer/corpus_*/
+libfuzzer/artifacts_*/
+libfuzzer/crash-*
+libfuzzer/leak-*
+libfuzzer/timeout-*
+libfuzzer/*.log
+libfuzzer/fuzz-*.log
+libfuzzer/nohup.out
+libfuzzer/help.txt
+# AFL runtime outputs
+afl/input/
+afl/output/

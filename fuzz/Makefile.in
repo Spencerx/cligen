@@ -39,23 +39,24 @@ bindir		= @bindir@
 libdir		= @libdir@
 srcdir		= @srcdir@
 
-TARGETS         = fuzz_cv fuzz_match fuzz_spec
+TARGETS         = fuzz_cv fuzz_spec fuzz_input
+LF              = libfuzzer
 
-.PHONY: all clean run run_spec run_match run_cv
+.PHONY: all clean run_spec run_cv run_input
 
 all:	$(TARGETS)
 
 clean:
-	rm -f $(TARGETS)
+	$(MAKE) -C $(LF) clean
 
 $(TARGETS):
-	./build.sh $@
+	$(MAKE) -C $(LF) $@
 
-run_spec:   fuzz_spec
-	nohup ./fuzz_spec corpus_spec -dict=cligen.dict -fork=4 -ignore_crashes=1 -ignore_timeouts=1 -ignore_ooms=1 -max_len=4096 -rss_limit_mb=2048 -timeout=10 -artifact_prefix=artifacts_spec/ > spec.log 2>&1
+run_spec:
+	$(MAKE) -C $(LF) run_spec
 
-run_match:   fuzz_match
-	nohup ./fuzz_match corpus_match -dict=cligen.dict -fork=4 -ignore_crashes=1 -ignore_timeouts=1 -ignore_ooms=1 -max_len=512 -rss_limit_mb=2048 -timeout=10 -artifact_prefix=artifacts_match/ > match.log 2>&1
+run_cv:
+	$(MAKE) -C $(LF) run_cv
 
-run_cv:   fuzz_cv
-	nohup ./fuzz_cv corpus_cv -fork=4 -ignore_crashes=1 -ignore_timeouts=1 -ignore_ooms=1 -max_len=128 -rss_limit_mb=2048 -timeout=10 -artifact_prefix=artifacts_cv/ > cv.log 2>&1
+run_input:
+	$(MAKE) -C $(LF) run_input
