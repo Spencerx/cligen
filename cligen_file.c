@@ -357,7 +357,7 @@ main(int   argc,
     FILE       *f = stdin;
     char       *argv0 = argv[0];
     char       *filename=NULL;
-    cvec       *globals;   /* global variables from syntax */
+    cvec       *globals = NULL;   /* global variables from syntax */
     cligen_handle  h;
     char       *str;
     int         once = 0;

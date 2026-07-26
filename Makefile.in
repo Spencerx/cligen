@@ -199,6 +199,9 @@ cligen_parse.tab.h: $(srcdir)/cligen_parse.y
 
 cligen_parse.tab.c: cligen_parse.tab.h
 
+cligen_parse.tab.o : cligen_parse.tab.c
+	$(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -Wno-unused-but-set-variable -c $<
+
 lex.cligen_parse.o : lex.cligen_parse.c cligen_parse.tab.h
 	$(CC) $(INCLUDES) $(CPPFLAGS) -DYY_NO_INPUT $(CFLAGS) -c $<
 
