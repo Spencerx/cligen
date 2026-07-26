@@ -33,6 +33,7 @@
 # exist in the repo root before building; run './configure && make' there first.
 
 TARGETS = fuzz_spec fuzz_cv fuzz_input
+ARTIFACTS = artifacts_spec artifacts_cv artifacts_input
 
 .PHONY: all clean run_spec run_cv run_input
 
@@ -44,29 +45,23 @@ clean:
 $(TARGETS):
 	./build.sh $@
 
-artifacts_spec:
-	mkdir $@
-
-artifacts_cv:
-	mkdir $@
-
-artifacts_input:
+$(ARTIFACTS):
 	mkdir $@
 
 run_spec: artifacts_spec fuzz_spec
-	nohup ./fuzz_spec corpus_spec -dict=cligen.dict \
+	./fuzz_spec corpus_spec -dict=cligen.dict \
 	    -fork=4 -ignore_crashes=1 -ignore_timeouts=1 -ignore_ooms=1 \
 	    -max_len=4096 -rss_limit_mb=2048 -timeout=10 \
-	    -artifact_prefix=artifacts_spec/ > spec.log 2>&1
+	    -artifact_prefix=artifacts_spec/
 
 run_cv: artifacts_cv fuzz_cv
-	nohup ./fuzz_cv corpus_cv -dict=cligen.dict \
+	./fuzz_cv corpus_cv -dict=cligen.dict \
 	    -fork=4 -ignore_crashes=1 -ignore_timeouts=1 -ignore_ooms=1 \
 	    -max_len=128 -rss_limit_mb=2048 -timeout=10 \
-	    -artifact_prefix=artifacts_cv/ > cv.log 2>&1
+	    -artifact_prefix=artifacts_cv/
 
 run_input: artifacts_input fuzz_input
 	./fuzz_input corpus_input -dict=cligen.dict \
 	    -fork=4 -ignore_crashes=1 -ignore_timeouts=1 -ignore_ooms=1 \
 	    -max_len=512 -rss_limit_mb=2048 -timeout=10 \
-	    -artifact_prefix=artifacts_input/ > input.log 2>&1
+	    -artifact_prefix=artifacts_input/
