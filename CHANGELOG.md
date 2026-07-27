@@ -43,6 +43,7 @@ Check before validate in case of "when" statement
 
 ### Corrected Bugs
 
+* Fixed: [Inconsistent error messages when mismatching values of int with explicit range](https://github.com/clicon/cligen/issues/146)
 * Fixed: [cli description should be enumeration's desc not the leaf's. for yang enum type](https://github.com/clicon/clixon/issues/183)
 * Fixed: [Custom Expansion Functions called twice on Pressing TAB](https://github.com/clicon/cligen/issues/92)
 * Fixed: [Validation of Partial match](https://github.com/clicon/cligen/issues/134)

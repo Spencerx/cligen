@@ -3257,8 +3257,6 @@ cv_validate(cligen_handle h,
             char        **reason)
 {
     int      retval = 1; /* OK */
-    int32_t  i = 0;
-    uint32_t u = 0;
     int64_t  i64;
     uint64_t u64;
     char    *str;
@@ -3271,12 +3269,12 @@ cv_validate(cligen_handle h,
     case CGV_INT8:
         if (!cs->cgs_rangelen)
             break;
-        i = cv_int8_get(cv);
+        i64 = cv_int64_get(cv); /* cv is the broad int64 parse; avoid truncation */
         ok = 0;         /* At least one should pass */
         for (j=0; j<cs->cgs_rangelen; j++){
             cv1 = cvec_i(cs->cgs_rangecvv_low, j);
             cv2 = cvec_i(cs->cgs_rangecvv_upp, j);
-            if ((ok = range_check(i, cv1, cv2, int8)) != 0)
+            if ((ok = range_check(i64, cv1, cv2, int8)) != 0)
                 break;
         }
         if (!ok){
@@ -3288,12 +3286,12 @@ cv_validate(cligen_handle h,
     case CGV_INT16:
         if (!cs->cgs_rangelen)
             break;
-        i = cv_int16_get(cv);
+        i64 = cv_int64_get(cv); /* cv is the broad int64 parse; avoid truncation */
         ok = 0;         /* At least one should pass */
         for (j=0; j<cs->cgs_rangelen; j++){
             cv1 = cvec_i(cs->cgs_rangecvv_low, j);
             cv2 = cvec_i(cs->cgs_rangecvv_upp, j);
-            if ((ok = range_check(i, cv1, cv2, int16)) != 0)
+            if ((ok = range_check(i64, cv1, cv2, int16)) != 0)
                 break;
         }
         if (!ok){
@@ -3305,12 +3303,12 @@ cv_validate(cligen_handle h,
     case CGV_INT32:
         if (!cs->cgs_rangelen)
             break;
-        i = cv_int32_get(cv);
+        i64 = cv_int64_get(cv); /* cv is the broad int64 parse; avoid truncation */
         ok = 0;         /* At least one should pass */
         for (j=0; j<cs->cgs_rangelen; j++){
             cv1 = cvec_i(cs->cgs_rangecvv_low, j);
             cv2 = cvec_i(cs->cgs_rangecvv_upp, j);
-            if ((ok = range_check(i, cv1, cv2, int32)) != 0)
+            if ((ok = range_check(i64, cv1, cv2, int32)) != 0)
                 break;
         }
         if (!ok){
@@ -3339,12 +3337,12 @@ cv_validate(cligen_handle h,
     case CGV_UINT8:
         if (!cs->cgs_rangelen)
             break;
-        u = cv_uint8_get(cv);
+        u64 = cv_uint64_get(cv); /* cv is the broad uint64 parse; avoid truncation */
         ok = 0;         /* At least one should pass */
         for (j=0; j<cs->cgs_rangelen; j++){
             cv1 = cvec_i(cs->cgs_rangecvv_low, j);
             cv2 = cvec_i(cs->cgs_rangecvv_upp, j);
-            if ((ok = range_check(u, cv1, cv2, uint8)) != 0)
+            if ((ok = range_check(u64, cv1, cv2, uint8)) != 0)
                 break;
         }
         if (!ok){
@@ -3356,12 +3354,12 @@ cv_validate(cligen_handle h,
     case CGV_UINT16:
         if (!cs->cgs_rangelen)
             break;
-        u = cv_uint16_get(cv);
+        u64 = cv_uint64_get(cv); /* cv is the broad uint64 parse; avoid truncation */
         ok = 0;         /* At least one should pass */
         for (j=0; j<cs->cgs_rangelen; j++){
             cv1 = cvec_i(cs->cgs_rangecvv_low, j);
             cv2 = cvec_i(cs->cgs_rangecvv_upp, j);
-            if ((ok = range_check(u, cv1, cv2, uint16)) != 0)
+            if ((ok = range_check(u64, cv1, cv2, uint16)) != 0)
                 break;
         }
         if (!ok){
@@ -3373,12 +3371,12 @@ cv_validate(cligen_handle h,
     case CGV_UINT32:
         if (!cs->cgs_rangelen)
             break;
-        u = cv_uint32_get(cv);
+        u64 = cv_uint64_get(cv); /* cv is the broad uint64 parse; avoid truncation */
         ok = 0;         /* At least one should pass */
         for (j=0; j<cs->cgs_rangelen; j++){
             cv1 = cvec_i(cs->cgs_rangecvv_low, j);
             cv2 = cvec_i(cs->cgs_rangecvv_upp, j);
-            if ((ok = range_check(u, cv1, cv2, uint32)) != 0)
+            if ((ok = range_check(u64, cv1, cv2, uint32)) != 0)
                 break;
         }
         if (!ok){

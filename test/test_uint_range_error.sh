@@ -48,6 +48,33 @@ expectpart "$(echo "u32 99999999999999999999" | $cligen_file -f $fspec 2> /dev/n
 newtest "uint64 overflow"
 expectpart "$(echo "u64 99999999999999999999" | $cligen_file -f $fspec 2> /dev/null)" 0 "CLI syntax error" "out of range: 0 - 18446744073709551615"
 
+# A range[] constraint must report the same spec-range message for every value
+# that violates it, whether the value fits the base type (300 > 100) or overflows
+# it (1000 > 255). Previously the broad-type parse was truncated by cv_validate's
+# type accessor, so 300->44 wrongly passed and 1000->232 wrongly failed, giving
+# two different messages ("0 - 255" vs "5 - 100").
+fspec2=$dir/spec2.cli
+cat > $fspec2 <<EOF
+  prompt="cli> ";
+  treename="rrange";
+  val <x:uint8 range[5:100]>, callback();
+EOF
+
+newtest "ranged uint8 valid in range"
+expectpart "$(echo "val 50" | $cligen_file -f $fspec2 2> /dev/null)" 0 "cli> val 50" --not-- "CLI syntax error"
+
+newtest "ranged uint8 below range"
+expectpart "$(echo "val 3" | $cligen_file -f $fspec2 2> /dev/null)" 0 "CLI syntax error" "out of range: 5 - 100"
+
+newtest "ranged uint8 above range within type"
+expectpart "$(echo "val 200" | $cligen_file -f $fspec2 2> /dev/null)" 0 "CLI syntax error" "out of range: 5 - 100"
+
+newtest "ranged uint8 above range and above type (300)"
+expectpart "$(echo "val 300" | $cligen_file -f $fspec2 2> /dev/null)" 0 "CLI syntax error" "out of range: 5 - 100" --not-- "out of range: 0 - 255"
+
+newtest "ranged uint8 above range and above type (1000) same message as 300"
+expectpart "$(echo "val 1000" | $cligen_file -f $fspec2 2> /dev/null)" 0 "CLI syntax error" "out of range: 5 - 100" --not-- "out of range: 0 - 255"
+
 newtest "endtest"
 endtest
 
