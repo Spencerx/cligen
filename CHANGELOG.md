@@ -22,6 +22,8 @@ Expected: September 2026
 
 ### Features
 
+* Added guards against pathological specs causing exponential growth
+  * Eg choice group `(a|b|c)` followed by a shared tail
 * Added LLVM libFuzzer support
 * Made CLIgen spec parser reentrant
 

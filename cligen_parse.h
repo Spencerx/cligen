@@ -84,6 +84,11 @@ struct cligen_parse_yacc{
     int                   cy_optional;     /* Keep track of [] level, 0..n. All co objects
                                             * created when this flag > 0 will have
                                             * CO_FLAGS_OPTION set */
+    int                   cy_co_count;     /* Number of parse-tree objects created in this
+                                            * parse. Guards against pathological specs whose
+                                            * choice/tail expansion is exponential. */
+    int                   cy_stackdepth;   /* Current ()/[]/{} nesting depth. Guards against
+                                            * excessively deep nesting. */
 };
 typedef struct cligen_parse_yacc cligen_yacc;
 

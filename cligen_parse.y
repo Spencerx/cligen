@@ -186,6 +186,43 @@ void cligen_parseerror(void *_cy,
 
 #define cligen_parseerror1(cy, s) cligen_parseerror((cy), (cy)->cy_scanner, (s))
 
+/*
+ * Guards against pathological specs that cause exponential parse-tree growth.
+ *
+ * A choice group such as (a|b|c) followed by a shared tail duplicates that tail
+ * under every alternative; chaining or nesting such groups multiplies, so the
+ * number of parse-tree objects can grow as O(k^n) in the number of groups. A
+ * small (few-KB) spec can therefore expand into millions of nodes and take
+ * seconds/minutes to parse while consuming gigabytes of memory.
+ *
+ * CLIGEN_PARSE_MAX_OBJS bounds the total number of parse-tree objects created
+ * in a single parse;
+ * CLIGEN_PARSE_MAX_DEPTH bounds the ()/[]/{} nesting depth.
+ */
+#ifndef CLIGEN_PARSE_MAX_OBJS
+#define CLIGEN_PARSE_MAX_OBJS 500000
+#endif
+#ifndef CLIGEN_PARSE_MAX_DEPTH
+#define CLIGEN_PARSE_MAX_DEPTH 1024
+#endif
+
+/*! Account for a newly created parse-tree object and enforce the object cap.
+ *
+ * @param[in]  cy  CLIgen yacc parse struct
+ * @retval     0   OK, within limit
+ * @retval    -1   Object limit exceeded
+ */
+static int
+cgy_obj_count(cligen_yacc *cy)
+{
+    if (++cy->cy_co_count > CLIGEN_PARSE_MAX_OBJS){
+        cligen_parseerror1(cy, "Too many parse-tree objects: spec too large or "
+                           "pathological (nested choices with shared tail)");
+        return -1;
+    }
+    return 0;
+}
+
 /*! Create a CLIgen variable (cv) and store it in the current variable object
  *
  * Note that only one such cv can be stored.
@@ -633,6 +670,8 @@ cgy_var_post(cligen_yacc *cy)
         cl = cy->cy_list;
     for (; cl; cl = cl->cl_next){
         coparent = cl->cl_obj;
+        if (cgy_obj_count(cy) < 0)
+            return -1;
         if (cl->cl_next){
             if (co_copy(coy, coparent, 0x0, &coc) < 0) /* duplicate coy to coc */
                 return -1;
@@ -670,6 +709,8 @@ cgy_cmd(cligen_yacc *cy,
         if (debug)
             fprintf(stderr, "%s: %s parent:%s\n",
                     __FUNCTION__, cmd, cop->co_command);
+        if (cgy_obj_count(cy) < 0)
+            return -1;
         if ((conew = co_new(cmd, cop)) == NULL) {
             cligen_parseerror1(cy, "Allocating cligen object");
             return -1;
@@ -712,6 +753,8 @@ cgy_reference(cligen_yacc *cy,
     for (cl=cy->cy_list; cl; cl = cl->cl_next){
         /* Add a treeref 'stub' which is expanded in pt_expand to a sub-tree */
         cop = cl->cl_obj;
+        if (cgy_obj_count(cy) < 0)
+            goto done;
         if ((cot = co_new(cbuf_get(cb), cop)) == NULL) {
             cligen_parseerror1(cy, "Allocating cligen object");
             goto done;
@@ -911,6 +954,8 @@ cgy_terminal(cligen_yacc *cy)
                     break;
             }
             if (i == pt_len_get(ptc)){ /* Insert empty child if ';' */
+                if (cgy_obj_count(cy) < 0)
+                    return -1;
                 if ((coi = co_new(NULL, co)) == NULL) {
                     cligen_parseerror1(cy, "Allocating cligen object");
                     return -1;
@@ -949,16 +994,21 @@ static int
 ctx_push(cligen_yacc *cy,
          int          sets)
 {
+    int               retval = -1;
     struct cgy_list  *cl;
     struct cgy_stack *cs;
     cg_obj           *co;
 
     if (debug)
         fprintf(stderr, "%s\n", __FUNCTION__);
+    if (++cy->cy_stackdepth > CLIGEN_PARSE_MAX_DEPTH){
+        cligen_parseerror1(cy, "Nesting too deep: too many nested () [] {}");
+        goto done;
+    }
     /* Create new stack element */
     if ((cs = malloc(sizeof(*cs))) == NULL) {
         fprintf(stderr, "%s: malloc: %s\n", __FUNCTION__, strerror(errno));
-        return -1;
+        goto done;
     }
     memset(cs, 0, sizeof(*cs));
     cs->cs_next = cy->cy_stack;
@@ -970,9 +1020,11 @@ ctx_push(cligen_yacc *cy,
         if (sets)
             co_sets_set(co, 1);
         if (cgy_list_push(co, &cs->cs_list) < 0)
-            return -1;
+            goto done;
     }
-    return 0;
+    retval = 0;
+ done:
+    return retval;
 }
 
 /*! Peek context from stack and replace the object list with it
@@ -1079,6 +1131,8 @@ ctx_pop_add(cligen_yacc *cy)
         return -1; /* shouldnt happen */
     }
     cy->cy_stack = cs->cs_next;
+    if (cy->cy_stackdepth > 0)
+        cy->cy_stackdepth--;
     /* We could have saved some heap work by moving the cs_list,... */
     for (cl = cs->cs_list; cl; cl = cl->cl_next){
         co = cl->cl_obj;
@@ -1114,6 +1168,8 @@ ctx_pop(cligen_yacc *cy)
         return -1; /* shouldnt happen */
     }
     cy->cy_stack = cs->cs_next;
+    if (cy->cy_stackdepth > 0)
+        cy->cy_stackdepth--;
     for (cl = cs->cs_saved; cl; cl = cl->cl_next){
         co = cl->cl_obj;
         if (cgy_list_push(co, &cy->cy_list) < 0)

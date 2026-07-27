@@ -40,7 +40,7 @@ ARTIFACTS = artifacts_spec artifacts_cv artifacts_input
 all: $(TARGETS)
 
 clean:
-	rm -f $(TARGETS)
+	rm -rf $(TARGETS) $(ARTIFACTS)
 
 $(TARGETS):
 	./build.sh $@

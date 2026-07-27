@@ -916,6 +916,32 @@ As an assistant, you can use the {\tt -p} option to {\tt cligen\_file} to see wh
 
 As an alternative solution, you can use the set mechanism as described in Sections~\ref{sec:sets}.
 
+\subsection{Parser resource limits}
+\label{sec:parselimits}
+
+Because the syntactical operators generate basic constructs as described
+above, a small specification can expand into a very large parse tree. This
+is especially true when a choice or grouping is followed by a shared tail,
+for example {\tt (a|b|c) (d|e|f) end}. Each alternative duplicates the
+constructs that follow it, so chaining or nesting such groups makes the
+number of generated objects grow multiplicatively (roughly $O(k^n)$). A
+crafted few-kilobyte specification can therefore expand into millions of
+nodes and take seconds or minutes to parse while consuming large amounts of
+memory (a ``billion-laughs''-style denial of service).
+
+To bound this worst case, the parser enforces two compile-time limits:
+\begin{itemize}
+\item {\tt CLIGEN\_PARSE\_MAX\_OBJS} (default {\tt 500000}) --- the maximum
+  number of parse-tree objects created in a single parse.
+\item {\tt CLIGEN\_PARSE\_MAX\_DEPTH} (default {\tt 1024}) --- the maximum
+  nesting depth of {\tt ()}, {\tt []} and {\tt \{\}} groupings.
+\end{itemize}
+If either limit is exceeded, parsing fails cleanly with an error rather than
+continuing to expand. Both defaults are far larger than any realistic
+hand-written specification and can be overridden at compile time (e.g.,
+{\tt -DCLIGEN\_PARSE\_MAX\_OBJS=...}) if you have an unusually large,
+legitimate specification.
+
 \section{Trees}
 \label{sec:trees}
 
