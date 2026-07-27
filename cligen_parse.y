@@ -1589,12 +1589,12 @@ cmd         : NAME           { _PARSE_DEBUG("cmd->NAME");
                variable '>'  { if (cgy_var_post(_cy) < 0) _YYERROR("cmd"); _CY->cy_var = NULL; }
             ;
 
-variable    : NAME          { if (cgy_var_name_type(_cy, $1, $1)<0) { free($1); _YYERROR("variable"); } free($1); }
-            | NAME ':' NAME { if (cgy_var_name_type(_cy, $1, $3)<0) { free($3); free($1); _YYERROR("variable"); } free($3); free($1); }
-            | NAME  { if (cgy_var_name_type(_cy, $1, $1) < 0) _YYERROR("variable"); }
-              keypairs { free($1); }
-            | NAME ':' NAME  { if (cgy_var_name_type(_cy, $1, $3) < 0) _YYERROR("variable"); }
-              keypairs { free($1); free($3); }
+variable    : vartype
+            | vartype keypairs
+            ;
+
+vartype     : NAME          { if (cgy_var_name_type(_cy, $1, $1) < 0) { free($1); _YYERROR("variable"); } free($1); }
+            | NAME ':' NAME { if (cgy_var_name_type(_cy, $1, $3) < 0) { free($1); free($3); _YYERROR("variable"); } free($1); free($3); }
             ;
 
 keypairs    : keypair {
@@ -1684,12 +1684,15 @@ exparglist : exparglist ',' exparg
 
 exparg     : DQ DQ
            | DQ charseq DQ { expand_arg(_cy, $2); free($2); }
-           ;
-
-exparg     : typecast arg1 {
-                    if ($2 && cgy_callback_arg(_cy, $1, $2) < 0) { if ($1) free($1); if ($2) free($2); _YYERROR("exparg"); }
-                    if ($1) free($1);
-                    if ($2) free($2);
+           | NAME {
+                    /* Bare arg (empty typecast): equivalent to the former
+                       "typecast arg1" branch with typecast==NULL, arg1==NAME. */
+                    if (cgy_callback_arg(_cy, NULL, $1) < 0) { free($1); _YYERROR("exparg"); }
+                    free($1);
+              }
+           | '(' NAME ')' arg1 {
+                    if ($4 && cgy_callback_arg(_cy, $2, $4) < 0) { free($2); if ($4) free($4); _YYERROR("exparg"); }
+                    free($2); if ($4) free($4);
               }
            ;
 
@@ -1704,7 +1707,7 @@ choices    : choice { $$ = $1; }
              }
            ;
 
-choice     : { $$ = NULL; }
+choice     :  { $$ = NULL; }
            | NUMBER choicehelp {
                  $$ = (void *)cgy_choicepair_append(NULL, $1, $2);
                  free($1); if ($2) free($2);
