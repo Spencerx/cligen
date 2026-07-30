@@ -531,18 +531,23 @@ static int
 cg_preference(cligen_yacc *cy,
               char        *pref)
 {
+    int     retval = -1;
     cg_obj *yv;
     char   *reason = NULL;
 
     if ((yv = cy->cy_var) == NULL){
         fprintf(stderr, "No var obj");
-        return -1;
+        goto done;
     }
     if (parse_uint16(pref, &yv->co_preference, &reason) != 1){
         cligen_parseerror1(cy, reason);
-        return -1;
+        goto done;
     }
-    return 0;
+    retval = 0;
+ done:
+    if (reason)
+        free(reason);
+    return retval;
 }
 
 static int
@@ -1252,7 +1257,6 @@ cg_range_create(cligen_yacc *cy,
         }
         if (cvret == 0){ /* parsing failed */
             cligen_parseerror1(cy, reason);
-            free(reason);
             goto done;
         }
     }
@@ -1280,10 +1284,8 @@ cg_range_create(cligen_yacc *cy,
     }
     if (cvret == 0){ /* parsing failed */
         cligen_parseerror1(cy, reason);
-        free(reason);
         goto done;
     }
-
     /* Append it to the upper bound cvec, create if NULL */
     if (yv->co_rangecvv_upp == NULL){
         if ((yv->co_rangecvv_upp = cvec_from_var(cv2)) == NULL)
@@ -1295,6 +1297,8 @@ cg_range_create(cligen_yacc *cy,
     yv->co_rangelen++;
     retval = 0;
   done:
+    if (reason)
+        free(reason);
     if (cv1)
         cv_free(cv1);
     if (cv2)
@@ -1353,22 +1357,27 @@ cg_range(cligen_yacc *cy,
 /*!
  * @param[in]  cy  CLIgen yacc parse struct
  */
- static int
+static int
 cg_dec64_n(cligen_yacc *cy,
            char        *fraction_digits)
 {
+    int     retval = -1;
     cg_obj *yv;
     char   *reason = NULL;
 
     if ((yv = cy->cy_var) == NULL){
         fprintf(stderr, "No var obj");
-        return -1;
+        goto done;
     }
-    if (parse_uint8(fraction_digits, &yv->co_dec64_n, NULL) != 1){
+    if (parse_uint8(fraction_digits, &yv->co_dec64_n, &reason) != 1){
         cligen_parseerror1(cy, reason);
-        return -1;
+        goto done;
     }
-    return 0;
+    retval = 0;
+ done:
+    if (reason)
+        free(reason);
+    return retval;
 }
 
 /*!
