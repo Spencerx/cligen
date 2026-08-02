@@ -22,6 +22,7 @@ Expected: September 2026
 
 ### Features
 
+* Optimized cvec_add using exponential growth instead of linear up to a threshold
 * Added guards against pathological specs causing exponential growth
   * Eg choice group `(a|b|c)` followed by a shared tail
 * Added LLVM libFuzzer support

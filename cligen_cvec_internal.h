@@ -43,7 +43,10 @@
  */
 struct cvec{
     cg_var         *vr_vec;  /* vector of CLIgen variables */
-    int             vr_len;  /* length of vector */
+    int             vr_len;  /* length of vector (number of used elements) */
+    int             vr_cap;  /* allocated capacity of vr_vec in elements (>= vr_len).
+                              * Grows exponentially, decoupled from vr_len so that
+                              * incremental cvec_add is amortized O(1). @see cvec_realloc */
     char           *vr_name; /* name of cvec, can be NULL */
 };
 
