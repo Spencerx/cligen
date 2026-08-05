@@ -122,6 +122,14 @@ expectpart "$(echo "x		" | $cligen_file -t 2 -e -f $fspec 2>&1)" 0 'CLI syntax e
 newtest "cligen x <tab><tab> tabmode:2"
 expectpart "$(echo "x		b" | $cligen_file -t 2 -e -f $fspec 2>&1)" 0 "1 name:x type:string value:x" "2 name:b type:string value:b" --not-- 'CLI syntax error in: "x": Incomplete command'
 
+# CLIGEN_TABMODE_KEYWORD_AMBIG (0x10): suppress auto-complete to keyword when variable sibling is also present
+# Regression test for: TAB silently completing to keyword when variable candidate also exists (issue #145)
+newtest "cligen x<tab><tab> tabmode:16 keyword-ambig suppresses autocomplete"
+expectpart "$(echo "x		" | $cligen_file -t 16 -e -f $fspec 2>&1)" 0 'CLI syntax error in: "x": Incomplete command'
+
+newtest "cligen x<tab><tab>b tabmode:16 keyword-ambig: manual keyword still executes"
+expectpart "$(echo "x		b" | $cligen_file -t 16 -e -f $fspec 2>&1)" 0 "1 name:x type:string value:x" "2 name:b type:string value:b" --not-- 'CLI syntax error in: "x": Incomplete command'
+
 # CLIGEN_TABMODE_STEPS
 newtest "cligen z<tab> tabmode:0"
 expectpart "$(echo "z	" | $cligen_file -t 0 -e -f $fspec 2>&1)" 0 'CLI syntax error in: "za": Incomplete command' --not-- "za zb zc"

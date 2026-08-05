@@ -1551,6 +1551,58 @@ variable {\tt interfaces}, {\tt expand\_ifname()} will be
 called. Therefore, be careful to avoid blocking calls within the
 callbacks since this may make the CLI less interactive.
 
+\subsection{Tab mode}
+\label{sec:tabmode}
+
+The tab-completion behaviour can be tuned with a bitfield passed to
+{\tt cligen\_tabmode\_set()}.  Each bit enables an independent option:
+
+\begin{description}
+\item[Bit 1 ({\tt CLIGEN\_TABMODE\_COLUMNS}, 0x01)]
+  Controls how alternatives are listed after a TAB.
+  When \emph{off} (default), alternatives are shown in a compact multi-column
+  layout (IOS style).
+  When \emph{on}, each alternative is shown on its own line with its full help
+  text (Junos style).
+
+\item[Bit 2 ({\tt CLIGEN\_TABMODE\_VARS}, 0x02)]
+  Controls the preference between keywords and variables when both are valid
+  at the current position.
+  When \emph{off} (default), keywords are preferred over variables; TAB
+  completes to a keyword and variables are hidden from the completion list.
+  When \emph{on}, keywords and variables have equal preference; both appear
+  in the completion list.
+
+\item[Bit 3 ({\tt CLIGEN\_TABMODE\_STEPS}, 0x04)]
+  Controls how many command levels TAB advances in one keystroke.
+  When \emph{off} (default), each TAB completes exactly one level.
+  When \emph{on}, TAB completes as many unambiguous levels as possible in a
+  single keystroke.
+
+\item[Bit 4 ({\tt CLIGEN\_TABMODE\_SHOW}, 0x08)]
+  Controls whether completion and listing of alternatives happen together.
+  When \emph{off}, the first TAB completes as far as possible and a second
+  TAB shows the available alternatives.
+  When \emph{on}, a single TAB both completes and shows alternatives.
+  This bit is \emph{set by default}.
+
+\item[Bit 5 ({\tt CLIGEN\_TABMODE\_KEYWORD\_AMBIG}, 0x10)]
+  Relevant only when bit 2 ({\tt CLIGEN\_TABMODE\_VARS}) is \emph{off}.
+  When \emph{off} (default), TAB silently auto-completes to a keyword even
+  if a static variable is also valid at the same position --- the variable's
+  existence is never revealed to the user.
+  When \emph{on}, TAB instead shows help listing all alternatives so the user
+  is aware that a variable input is also accepted.
+  Note: this flag does not suppress auto-complete when the keyword was generated
+  by an expand callback.
+
+\end{description}
+
+Example: enable keyword-ambiguity detection alongside the default show flag:
+\begin{verbatim}
+cligen_tabmode_set(h, CLIGEN_TABMODE_SHOW | CLIGEN_TABMODE_KEYWORD_AMBIG);
+\end{verbatim}
+
 \subsection{Translation}
 \label{sec:translate}
 

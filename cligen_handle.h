@@ -62,6 +62,12 @@
  */
 #define CLIGEN_TABMODE_SHOW   0x08
 
+/* Show help when keyword and hidden variable compete at same level (TABMODE_VARS=0)
+ * 0: auto-complete to keyword (existing behaviour)
+ * 1: suppress auto-complete and show help when a variable is also present
+ */
+#define CLIGEN_TABMODE_KEYWORD_AMBIG 0x10
+
 /*
  * Types
  */

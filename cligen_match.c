@@ -1378,6 +1378,7 @@ match_complete_mr(cligen_handle  h,
     int      minmatch;
     cg_obj  *co;
     cg_obj  *co1 = NULL;
+    int      skipped_vars = 0;   /* vars skipped because TABMODE_VARS is off */
     char    *string;
     int      append = 0;
     int      retval = -1;
@@ -1398,8 +1399,10 @@ match_complete_mr(cligen_handle  h,
             goto done;
         }
         if ((cligen_tabmode(h) & CLIGEN_TABMODE_VARS) == 0){
-            if (co->co_type != CO_COMMAND)
+            if (co->co_type != CO_COMMAND){
+                skipped_vars++;
                 continue;
+            }
         }
         command = co->co_value?co->co_value:co->co_command;
         if (co1 == NULL){
@@ -1427,6 +1430,14 @@ match_complete_mr(cligen_handle  h,
     if (co1 == NULL){
         retval = 0;
         goto done;
+    }
+    /* If variable candidates were hidden (TABMODE_VARS off), the completion is
+     * ambiguous from the user's perspective even when there is exactly one
+     * keyword candidate.  Suppress auto-complete (no chars, no trailing space)
+     * so the outer loop detects no progress and displays help instead. */
+    if (skipped_vars > 0 && (cligen_tabmode(h) & CLIGEN_TABMODE_KEYWORD_AMBIG)){
+        equal = 0;
+        minmatch = slen;
     }
     while (strlen(*stringp) + minmatch - slen >= *slenp){
         *slenp *= 2;

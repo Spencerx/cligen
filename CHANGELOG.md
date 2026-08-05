@@ -30,6 +30,8 @@ Expected: September 2026
 
 ### Corrected Bugs
 
+* Fixed: [Auto-completion ignores variable nodes when competing with literal keywords on trailing spaces](https://github.com/clicon/cligen/issues/145)
+  New tabmode flag: bit 5 added
 * Invalid: [Unescaped vertical bar in values does not work](https://github.com/clicon/cligen/issues/144)
   * Need to escape virtual bar, documented and added tests
 * Fixed: [Partial command matching is incorrectly suppressed by variable validation](https://github.com/clicon/cligen/issues/140)
