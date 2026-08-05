@@ -30,6 +30,7 @@ Expected: September 2026
 
 ### Corrected Bugs
 
+* Fixed: [Empty enum/bit description causes autocli CLI-spec generation to fail with "syntax error: at or before: '"'"](https://github.com/clicon/clixon/issues/684)
 * Fixed: [Auto-completion ignores variable nodes when competing with literal keywords on trailing spaces](https://github.com/clicon/cligen/issues/145)
   New tabmode flag: bit 5 added
 * Invalid: [Unescaped vertical bar in values does not work](https://github.com/clicon/cligen/issues/144)

@@ -1736,6 +1736,7 @@ choice     :  { $$ = NULL; }
 
 choicehelp : /* empty */ { $$ = NULL; }
            | '(' DQ charseq DQ ')' { $$ = $3; }
+           | '(' DQ DQ ')'         { $$ = NULL; }
            ;
 
 charseq    : charseq CHARS
