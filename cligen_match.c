@@ -1439,7 +1439,7 @@ match_complete_mr(cligen_handle  h,
         equal = 0;
         minmatch = slen;
     }
-    while (strlen(*stringp) + minmatch - slen >= *slenp){
+    while (strlen(*stringp) + minmatch - slen + 2 > *slenp){
         *slenp *= 2;
         if ((*stringp = realloc(*stringp, *slenp)) == NULL)
             goto done;
