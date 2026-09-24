@@ -1,6 +1,6 @@
 # CLIgen Changelog
 
-* [7.9.0](#790) Expected: September 2026
+* [7.9.0](#790) 25 September 2026
 * [7.8.0](#780) 29 May 2026
 * [7.7.0](#770) 21 February 2026
 * [7.6.0](#760) 21 November 2025
@@ -18,15 +18,15 @@
 * [6.0.0](#600) 29 Nov 2022
 
 ## 7.9.0
-Expected: September 2026
+25 September 2026
 
 ### Features
 
+* Reentrant (thread-safe) clispec parser
+* Added LLVM libFuzzer support
 * Optimized cvec_add using exponential growth instead of linear up to a threshold
 * Added guards against pathological specs causing exponential growth
-  * Eg choice group `(a|b|c)` followed by a shared tail
-* Added LLVM libFuzzer support
-* Made CLIgen spec parser reentrant
+    * Eg choice group `(a|b|c)` followed by a shared tail
 
 ### Corrected Bugs
 
